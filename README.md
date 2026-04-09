@@ -206,6 +206,56 @@ Full list: [**docs/KNOWN-ISSUES.md**](docs/KNOWN-ISSUES.md)
 
 ---
 
+## The Knowledge Layer — isolation without amnesia
+
+> **lane-lock builds walls between projects. Your MCP brain builds windows.**
+
+The most common pushback on session isolation: *"If my agents can't see other projects, they lose shared knowledge."* That's a real concern — and it's by design. lane-lock does **not** block MCP server tool calls. That's your knowledge bus.
+
+```
+Agent 1 (Project A)  ──┐
+Agent 2 (Project A)  ──┤   MCP "brain"        ~/.claude/memory/
+Agent 3 (Project B)  ──┼──► server         ←── (global, not per-project)
+Agent 4 (Project C)  ──┤   (indexes all
+Agent 5 (Project C)  ──┘    projects)
+                                             
+lane-lock: file ops isolated per project
+MCP brain: knowledge flows across projects
+```
+
+### What lane-lock blocks vs. what it doesn't
+
+| Blocked by lane-lock | NOT blocked |
+|----------------------|-------------|
+| Read/write files in other project repos | MCP server tool calls |
+| `cd` into another repo | Global `~/.claude/` config and memory |
+| Git operations on wrong repo | Pre/post session hooks |
+| Ambiguous prompts referencing other projects | `[cross-lane:]` bypass phrases |
+
+### The pattern for single-workstation swarming
+
+If you're running 20 agents on one machine:
+
+1. **Install lane-lock** on every project — agents can't touch each other's files
+2. **Run a knowledge MCP server** (e.g., [claude-mem](https://github.com/anthropics/claude-code/discussions), or any MCP that indexes `~/.claude/projects/*/memory/`) — agents can search and contribute shared knowledge
+3. **Each agent writes discoveries** via MCP `contribute()` — not via file writes to other repos
+4. **Each agent searches context** via MCP `search()` — gets cross-project knowledge without breaking isolation
+
+lane-lock intentionally leaves the MCP channel open. That's your knowledge bus. Walls and windows — not walls and walls.
+
+### For fleet operators
+
+If you run multiple machines (CI nodes, dev fleet, remote agents), the knowledge layer is a **dedicated agent** that:
+
+- Reads across all project repos (it's not lane-locked — it's the harvester)
+- Extracts patterns, lessons, reusable improvements
+- Writes to a shared knowledge store (git repo, MCP index, or both)
+- Pushes relevant findings back as memory entries that lane-locked sessions pick up
+
+The harvester runs outside lane-lock's scope. The results flow through MCP or global memory into every lane-locked session. Isolation stays hard. Knowledge stays shared.
+
+---
+
 ## FAQ
 
 **Why not just use git worktrees?**
@@ -293,7 +343,7 @@ node --test tests/e2e/cross-project-drift.test.mjs     # hero fixture
 
 ## Credits
 
-Built by **[acme-org](https://example.com)** with Claude Code, **Claude Opus 4.6** as co-author, and a local Ollama fleet for the bulk refactor passes. Origin incident: the overnight cross-project drift of 2026-04-07. Research pass that proved the gap: 12 swarm frameworks, HN, Reddit, r/ClaudeAI, every open hook-tagged issue on `anthropics/claude-code`.
+Built by **[MBACIO](https://www.mbacio.com)** with Claude Code, **Claude Opus 4.6** as co-author, and a local Ollama fleet for the bulk refactor passes. Origin incident: the overnight cross-project drift of 2026-04-07. Research pass that proved the gap: 12 swarm frameworks, HN, Reddit, r/ClaudeAI, every open hook-tagged issue on `anthropics/claude-code`.
 
 Design informed by prior art from the Claude Code community:
 
