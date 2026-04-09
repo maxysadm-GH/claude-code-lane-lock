@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/logo.svg" alt="lane-lock" width="120" />
+<img src="docs/assets/logo.png" alt="lane-lock by MBACIO" width="180" />
 
 # claude-code-lane-lock
 
