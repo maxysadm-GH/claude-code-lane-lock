@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>lane-lock hero social card</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #000;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    padding: 40px;
+    font-family: 'Inter', Arial, sans-serif;
+  }
+
+  .card {
+    background: linear-gradient(135deg, #0B1220 0%, #0F1C33 40%, #1B2A4A 100%);
+    color: #FFFFFF;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    border-radius: 0;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: -200px; right: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(239, 68, 68, 0.12) 0%, transparent 60%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .card::after {
+    content: '';
+    position: absolute;
+    bottom: -100px; left: -100px;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(26, 86, 219, 0.15) 0%, transparent 60%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  /* ========== HERO 1 — 1200×630 LinkedIn / Open Graph / X large ========== */
+  .card-og {
+    width: 1200px;
+    height: 630px;
+  }
+
+  .card-og .left {
+    flex: 1;
+    padding: 60px 40px 60px 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+  }
+
+  .card-og .right {
+    width: 560px;
+    padding: 60px 80px 60px 0;
+    display: flex;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+  }
+
+  .card-og .accent-bar {
+    width: 72px; height: 4px;
+    background: #EF4444;
+    margin-bottom: 28px;
+    border-radius: 2px;
+  }
+
+  .card-og .tag {
+    display: inline-block;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #F87171;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 6px 14px;
+    margin-bottom: 28px;
+    text-transform: uppercase;
+    border-radius: 2px;
+  }
+
+  .card-og h1 {
+    font-size: 44px;
+    font-weight: 900;
+    line-height: 1.08;
+    letter-spacing: -1.5px;
+    margin-bottom: 18px;
+    color: #FFFFFF;
+  }
+
+  .card-og h1 .highlight {
+    color: #F87171;
+    font-weight: 900;
+  }
+
+  .card-og .tagline {
+    font-size: 20px;
+    font-weight: 500;
+    color: #94A3B8;
+    line-height: 1.45;
+    margin-bottom: 28px;
+    max-width: 540px;
+  }
+
+  .card-og .meta {
+    display: flex;
+    gap: 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: #64748B;
+    padding-top: 18px;
+    border-top: 1px solid rgba(148, 163, 184, 0.2);
+    max-width: 480px;
+  }
+
+  .card-og .meta span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* Terminal panel */
+  .terminal {
+    background: #0A0E14;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 10px;
+    padding: 0;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(239, 68, 68, 0.08);
+    overflow: hidden;
+    width: 480px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .terminal-header {
+    background: #1A1F2C;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+  }
+
+  .terminal-header .dot {
+    width: 11px; height: 11px;
+    border-radius: 50%;
+  }
+  .terminal-header .red { background: #FF5F57; }
+  .terminal-header .yellow { background: #FEBC2E; }
+  .terminal-header .green { background: #28C840; }
+
+  .terminal-header .title {
+    color: #64748B;
+    font-size: 11px;
+    margin-left: 12px;
+    flex: 1;
+    text-align: center;
+  }
+
+  .terminal-body {
+    padding: 18px 18px 20px 18px;
+    font-size: 11.5px;
+    line-height: 1.55;
+  }
+
+  .cmd-prompt { color: #7DD3FC; }
+  .cmd-cursor { color: #FFFFFF; }
+  .cmd-text { color: #CBD5E1; }
+  .cmd-arg { color: #FBBF24; }
+
+  .block-banner {
+    background: rgba(239, 68, 68, 0.08);
+    border-left: 3px solid #EF4444;
+    padding: 10px 14px;
+    margin: 14px 0 8px 0;
+    border-radius: 3px;
+  }
+
+  .block-banner .header {
+    color: #FCA5A5;
+    font-weight: 700;
+    font-size: 12px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .block-banner .field {
+    display: flex;
+    gap: 8px;
+    color: #94A3B8;
+    font-size: 11px;
+    margin: 2px 0;
+  }
+  .block-banner .field .label { color: #64748B; min-width: 64px; }
+  .block-banner .field .value { color: #FCA5A5; }
+
+  .exit-line {
+    color: #64748B;
+    font-size: 11px;
+    margin-top: 6px;
+  }
+  .exit-line .code { color: #EF4444; font-weight: 700; }
+
+  .mbacio-mark {
+    position: absolute;
+    bottom: 32px; right: 40px;
+    color: #64748B;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    z-index: 3;
+  }
+  .mbacio-mark .brand { color: #94A3B8; font-weight: 700; }
+
+  /* ========== HERO 2 — 1200×1200 square for X/Reddit thumbnail ========== */
+  .card-square {
+    width: 1200px;
+    height: 1200px;
+    padding: 100px 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .card-square .accent-bar {
+    width: 80px; height: 5px;
+    background: #EF4444;
+    margin-bottom: 32px;
+    border-radius: 3px;
+  }
+  .card-square .tag {
+    display: inline-block;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #F87171;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    padding: 8px 18px;
+    margin-bottom: 32px;
+    text-transform: uppercase;
+    border-radius: 3px;
+  }
+  .card-square h1 {
+    font-size: 80px;
+    font-weight: 900;
+    line-height: 1.02;
+    letter-spacing: -2px;
+    margin-bottom: 28px;
+    max-width: 1020px;
+    color: #FFFFFF;
+  }
+  .card-square h1 .highlight { color: #F87171; }
+  .card-square .tagline {
+    font-size: 28px;
+    font-weight: 500;
+    color: #94A3B8;
+    line-height: 1.4;
+    margin-bottom: 48px;
+    max-width: 950px;
+  }
+  .card-square .big-terminal {
+    background: #0A0E14;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 14px;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6), 0 0 60px rgba(239, 68, 68, 0.1);
+    overflow: hidden;
+    width: 100%;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .card-square .terminal-header { padding: 14px 18px; }
+  .card-square .terminal-header .dot { width: 14px; height: 14px; }
+  .card-square .terminal-header .title { font-size: 13px; }
+  .card-square .terminal-body { padding: 28px 32px; font-size: 18px; line-height: 1.6; }
+  .card-square .block-banner { padding: 16px 22px; margin: 22px 0 12px 0; }
+  .card-square .block-banner .header { font-size: 18px; }
+  .card-square .block-banner .field { font-size: 16px; }
+  .card-square .exit-line { font-size: 16px; margin-top: 10px; }
+
+  .card-square .mbacio-mark {
+    bottom: 60px; right: 80px;
+    font-size: 14px;
+  }
+
+  /* ========== HERO 3 — 1280×640 X header / blog banner ========== */
+  .card-banner {
+    width: 1280px;
+    height: 640px;
+  }
+  .card-banner .left {
+    flex: 1.1;
+    padding: 70px 40px 70px 90px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+  }
+  .card-banner .right {
+    flex: 0.9;
+    padding: 70px 90px 70px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+  }
+  .card-banner h1 {
+    font-size: 54px;
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -1.8px;
+    margin-bottom: 24px;
+    color: #FFFFFF;
+  }
+  .card-banner h1 .highlight { color: #F87171; }
+  .card-banner .accent-bar {
+    width: 80px; height: 5px;
+    background: #EF4444;
+    margin-bottom: 28px;
+    border-radius: 3px;
+  }
+  .card-banner .tag {
+    display: inline-block;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #F87171;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    padding: 7px 16px;
+    margin-bottom: 28px;
+    text-transform: uppercase;
+    border-radius: 3px;
+  }
+  .card-banner .tagline {
+    font-size: 22px;
+    font-weight: 500;
+    color: #94A3B8;
+    line-height: 1.45;
+    margin-bottom: 36px;
+    max-width: 600px;
+  }
+  .card-banner .cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    color: #7DD3FC;
+    padding: 12px 18px;
+    border: 1px solid rgba(125, 211, 252, 0.3);
+    border-radius: 4px;
+    background: rgba(125, 211, 252, 0.05);
+    align-self: flex-start;
+  }
+  .card-banner .terminal { width: 100%; max-width: 520px; }
+  .card-banner .terminal-body { font-size: 13px; }
+</style>
+</head>
+<body>
+
+  <!-- ============ HERO 1: 1200x630 Open Graph / LinkedIn / X ============ -->
+  <div class="card card-og" id="card-og">
+    <div class="left">
+      <span class="tag">⚠ DRIFT BLOCKED · T=0</span>
+      <div class="accent-bar"></div>
+      <h1>Pin Claude Code sessions<br/>to their project root.<br/><span class="highlight">Kill drift before</span><br/><span class="highlight">reasoning starts.</span></h1>
+      <p class="tagline">A 7-hook Claude Code plugin that exits a drift prompt at <code>UserPromptSubmit</code> — erasing it from context before a single token spends.</p>
+      <div class="meta">
+        <span>7 HOOKS</span>
+        <span>ZERO RUNTIME DEPS</span>
+        <span>APACHE 2.0</span>
+      </div>
+    </div>
+    <div class="right">
+      <div class="terminal">
+        <div class="terminal-header">
+          <span class="dot red"></span>
+          <span class="dot yellow"></span>
+          <span class="dot green"></span>
+          <span class="title">~/projects/project-alpha — claude</span>
+        </div>
+        <div class="terminal-body">
+          <div><span class="cmd-prompt">❯</span> <span class="cmd-text">fix the project-gamma dashboard bug</span></div>
+          <div class="block-banner">
+            <div class="header">🛡 lane-lock: BLOCKED</div>
+            <div class="field"><span class="label">pinned:</span><span>project-alpha</span></div>
+            <div class="field"><span class="label">matched:</span><span class="value">project-gamma</span></div>
+            <div class="field"><span class="label">reason:</span><span>cross-project alias</span></div>
+          </div>
+          <div class="exit-line">prompt erased from context · <span class="code">exit 2</span> · 0 reasoning tokens spent</div>
+        </div>
+      </div>
+    </div>
+    <div class="mbacio-mark"><span class="brand">MBACIO</span> · lane-lock v0.1.0</div>
+  </div>
+
+  <!-- ============ HERO 2: 1200x1200 square ============ -->
+  <div class="card card-square" id="card-square">
+    <span class="tag">⚠ CLAUDE CODE · DRIFT PREVENTION</span>
+    <div class="accent-bar"></div>
+    <h1>Pin sessions.<br/><span class="highlight">Kill drift.</span><br/>At t=0.</h1>
+    <p class="tagline">A Claude Code plugin that blocks cross-project drift prompts at UserPromptSubmit — before any reasoning token fires.</p>
+    <div class="big-terminal">
+      <div class="terminal-header">
+        <span class="dot red"></span>
+        <span class="dot yellow"></span>
+        <span class="dot green"></span>
+        <span class="title">~/projects/project-alpha — claude code session</span>
+      </div>
+      <div class="terminal-body">
+        <div><span class="cmd-prompt">❯</span> <span class="cmd-text">Now switch gears and fix the project-gamma inventory dashboard bug.</span></div>
+        <div class="block-banner">
+          <div class="header">🛡 lane-lock: drift prompt BLOCKED before reasoning started</div>
+          <div class="field"><span class="label">pinned:</span><span>project-alpha</span></div>
+          <div class="field"><span class="label">pin root:</span><span>~/projects/project-alpha</span></div>
+          <div class="field"><span class="label">matched:</span><span class="value">project-gamma</span></div>
+          <div class="field"><span class="label">reason:</span><span>cross-project alias detection</span></div>
+          <div class="field"><span class="label">bypass:</span><span>[cross-lane: project-gamma] &lt;prompt&gt;</span></div>
+        </div>
+        <div class="exit-line">prompt erased from context entirely · <span class="code">exit 2</span> · 0 reasoning tokens spent · 0 LLM calls</div>
+      </div>
+    </div>
+    <div class="mbacio-mark"><span class="brand">MBACIO</span> · claude-code-lane-lock v0.1.0 · apache 2.0</div>
+  </div>
+
+  <!-- ============ HERO 3: 1280x640 blog banner / X header ============ -->
+  <div class="card card-banner" id="card-banner">
+    <div class="left">
+      <span class="tag">CASE STUDY · AUTONOMOUS DEV</span>
+      <div class="accent-bar"></div>
+      <h1>Self-healing dashboards.<br/><span class="highlight">Overnight.</span><br/>Without the drift.</h1>
+      <p class="tagline">How MBACIO's manufacturing client gets production-grade AI engineering done while the team sleeps — and the open-source plugin that made it safe.</p>
+      <div class="cta">read the case study →</div>
+    </div>
+    <div class="right">
+      <div class="terminal">
+        <div class="terminal-header">
+          <span class="dot red"></span>
+          <span class="dot yellow"></span>
+          <span class="dot green"></span>
+          <span class="title">overnight dashboard cycle</span>
+        </div>
+        <div class="terminal-body">
+          <div style="color:#10B981;">[00:14] planning cycle started</div>
+          <div style="color:#CBD5E1;">[00:47] 3 refactors drafted (local)</div>
+          <div style="color:#CBD5E1;">[01:12] claude-code QA pass</div>
+          <div style="color:#CBD5E1;">[01:34] tests green · committed</div>
+          <div style="color:#10B981;">[02:18] deploy to staging</div>
+          <div style="color:#CBD5E1;">[03:22] metrics validated</div>
+          <div style="color:#10B981;">[04:06] merged to main</div>
+          <div style="color:#64748B;">───────────────────────</div>
+          <div style="color:#7DD3FC;">zero drift · zero waste · 7 commits</div>
+        </div>
+      </div>
+    </div>
+    <div class="mbacio-mark"><span class="brand">MBACIO</span> · AI ENGINEERING</div>
+  </div>
+
+</body>
+</html>
