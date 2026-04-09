@@ -6,6 +6,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [0.1.0] - 2026-04-08
 
+### License
+- Licensed under the Apache License, Version 2.0
+- NOTICE file added with attribution requirement for derivative works (Section 4(d))
+- AI co-author credit recorded for Claude Opus 4.6, Sonnet 4.6, Haiku 4.5
+
 ### Added
 - 7 Claude Code hooks that pin interactive sessions to their git project root and block cross-project drift at t=0
 - SessionStart hook: pin capture + lane marker injection
@@ -19,7 +24,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Install script with atomic merge, backup, idempotency
 - Bypass mechanisms: [cross-lane: X] prompt phrase and CLAUDE_ALLOW_CROSS_PROJECT env var
 - Known-issue detection for anthropics/claude-code #8810, #10367, #11519, #27343
-- Test fixture reproducing the 2026-04-07 Project Alpha to Project Gamma drift incident, 8/8 passing
+- Hero fixture reproducing a cross-project drift scenario end-to-end, 8/8 passing
 
 ### Fixed
 - Prefix bug in path containment: /foo is no longer inside /foobar

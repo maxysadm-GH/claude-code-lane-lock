@@ -1,0 +1,66 @@
+%% claude-code-lane-lock — architecture (Mermaid flowchart fallback)
+%% Render: https://mermaid.live or GitHub renders this block natively
+%% inside a ```mermaid fenced block.
+
+flowchart TB
+    classDef kill fill:#450a0a,stroke:#dc2626,stroke-width:2px,color:#fecaca
+    classDef hook fill:#1e293b,stroke:#475569,color:#e2e8f0
+    classDef lib fill:#0f172a,stroke:#64748b,color:#e2e8f0
+    classDef state fill:#1e293b,stroke:#334155,color:#f1f5f9
+
+    subgraph session["Claude Code session"]
+        prompt[User prompt]
+        dispatcher[Hook dispatcher]
+        reason[Reasoning and tool calls]
+        resp[Response]
+        prompt --> dispatcher --> reason --> resp
+    end
+
+    subgraph hooks["Hooks (bin/*.mjs)"]
+        direction LR
+        h1[SessionStart<br/>t = 0<br/>capture git root]
+        h2["UserPromptSubmit<br/>before reasoning<br/><b>exit 2 = KILL</b>"]:::kill
+        h3[PreToolUse read<br/>Read Grep Glob<br/>allow + warn]
+        h4[PreToolUse write<br/>Edit Write Bash<br/>deny decision]
+        h5[CwdChanged<br/>re-verify pin]
+        h6[SessionEnd<br/>cleanup lockfile]
+        h7[TaskCreated<br/>no-op]
+    end
+
+    subgraph lib["lib/*.mjs shared modules"]
+        direction LR
+        l1[paths]
+        l2[pin]
+        l3[config]
+        l4[match]:::kill
+        l5[log]
+        l6[exit]
+        l7[stdin]
+    end
+
+    lockfile[("~/.claude/lane-lock/sessions/<br/>&lt;session_id&gt;.json")]
+
+    dispatcher --> h1
+    dispatcher ==>|"stdin: {prompt}"| h2
+    dispatcher --> h3
+    dispatcher --> h4
+    dispatcher --> h5
+    dispatcher --> h6
+    dispatcher -.-> h7
+
+    h1 --> l1 & l2 & l7
+    h2 ==> l4
+    h2 --> l3 & l6 & l7
+    h3 --> l3 & l4 & l5 & l7
+    h4 --> l3 & l4 & l5 & l6 & l7
+    h5 --> l2 & l7
+    h6 --> l2
+
+    l2 --> lockfile
+    l1 --> lockfile
+
+    h2 ==>|"exit 2 erases prompt from context"| session
+
+    class h1,h3,h4,h5,h6,h7 hook
+    class l1,l2,l3,l5,l6,l7 lib
+    class lockfile state

@@ -1,21 +1,22 @@
 /**
- * THE HERO FIXTURE — reproduces the 2026-04-07 Project Alpha→Project Gamma drift incident
- * and proves the UserPromptSubmit hook kills the drift at t=0 (exit 2).
+ * Hero fixture — reproduces a cross-project drift scenario in a
+ * self-contained way and proves the UserPromptSubmit hook kills the drift
+ * at t=0 (exit 2).
  *
  * This is the single most important test in the repo. If this passes, the
  * core value prop works. If this fails, we have no plugin.
  *
  * The scenario:
  * - A Claude Code session is pinned to `project-alpha`
- * - The user (or ambient context) sends a prompt that references the Project Gamma
- *   inventory dashboard project
- * - Without lane-lock: the session would drift, waste 4 hours, and commit
- *   to the wrong repo
- * - With lane-lock: UserPromptSubmit sees "project-gamma" / "inventory-demo" in the
- *   prompt, exits 2, and the prompt is erased from context — before any
- *   reasoning token fires
+ * - The user (or ambient context) sends a prompt that references
+ *   `project-gamma` or its alias `inventory-demo`
+ * - Without lane-lock: the session would drift, waste reasoning cycles,
+ *   and commit to the wrong repo
+ * - With lane-lock: UserPromptSubmit sees the sibling alias in the prompt,
+ *   exits 2, and the prompt is erased from context — before any reasoning
+ *   token fires
  *
- * Run: node --test tests/e2e/project-alpha-project-gamma-drift.test.mjs
+ * Run: node --test tests/e2e/cross-project-drift.test.mjs
  */
 
 import { test, describe, before, after } from 'node:test';
@@ -55,16 +56,17 @@ function invokeHook(scriptPath, payload) {
 
 /**
  * Build two fake sibling project directories with init'd git repos, one
- * for Project Alpha and one for Project Gamma inventory-demo. Returns their resolved paths.
+ * for project-alpha and one for project-gamma (inventory-demo). Returns
+ * their resolved paths.
  */
 function buildFixtureWorld() {
   const base = mkdtempSync(join(tmpdir(), 'lane-lock-fixture-'));
   cleanup.push(base);
 
-  const project-alpha = join(base, 'project-alpha');
-  const project-gamma = join(base, 'inventory-demo');
+  const alpha = join(base, 'project-alpha');
+  const gamma = join(base, 'project-gamma');
 
-  for (const dir of [project-alpha, project-gamma]) {
+  for (const dir of [alpha, gamma]) {
     mkdirSync(dir, { recursive: true });
     execFileSync('git', ['init', '-q', '-b', 'main'], { cwd: dir });
     execFileSync('git', ['config', 'user.email', 'fixture@example.com'], { cwd: dir });
@@ -74,23 +76,23 @@ function buildFixtureWorld() {
     execFileSync('git', ['commit', '-q', '-m', 'init'], { cwd: dir });
   }
 
-  // Write a project-scoped lane-lock.json in the project-alpha fixture that
-  // declares Project Gamma as a known sibling project.
-  mkdirSync(join(project-alpha, '.claude'), { recursive: true });
+  // Write a project-scoped lane-lock.json in project-alpha that declares
+  // project-gamma as a known sibling project.
+  mkdirSync(join(alpha, '.claude'), { recursive: true });
   writeFileSync(
-    join(project-alpha, '.claude', 'lane-lock.json'),
+    join(alpha, '.claude', 'lane-lock.json'),
     JSON.stringify(
       {
         knownProjects: [
           {
             name: 'project-alpha',
-            aliases: ['project-alpha', 'project-alpha'],
-            root: project-alpha,
+            aliases: ['project-alpha', 'alpha'],
+            root: alpha,
           },
           {
             name: 'project-gamma',
-            aliases: ['project-gamma', 'inventory-demo', 'inventory-demo', 'vosges'],
-            root: project-gamma,
+            aliases: ['project-gamma', 'gamma', 'inventory-demo', 'inv-demo'],
+            root: gamma,
           },
         ],
       },
@@ -99,12 +101,12 @@ function buildFixtureWorld() {
     )
   );
 
-  return { project-alpha, project-gamma };
+  return { alpha, gamma };
 }
 
-describe('Project Alpha→Project Gamma drift — the hero fixture', () => {
+describe('Cross-project drift — the hero fixture', () => {
   let world;
-  const sessionId = `fixture-nav-project-gamma-${Date.now()}`;
+  const sessionId = `fixture-cross-project-${Date.now()}`;
 
   before(() => {
     world = buildFixtureWorld();
@@ -137,7 +139,7 @@ describe('Project Alpha→Project Gamma drift — the hero fixture', () => {
   test('SessionStart: pins the project-alpha project and writes a lockfile', () => {
     const result = invokeHook(SESSION_START, {
       session_id: sessionId,
-      cwd: world.project-alpha,
+      cwd: world.alpha,
       source: 'startup',
     });
 
@@ -160,18 +162,18 @@ describe('Project Alpha→Project Gamma drift — the hero fixture', () => {
   test('UserPromptSubmit: ALLOWS a normal project-alpha-scoped prompt', () => {
     const result = invokeHook(USER_PROMPT_SUBMIT, {
       session_id: sessionId,
-      cwd: world.project-alpha,
-      prompt: 'Add a new route for patient summary in the project-alpha app.',
+      cwd: world.alpha,
+      prompt: 'Add a new route for user profile in the project-alpha app.',
     });
 
     assert.equal(result.exitCode, 0, `normal prompt must exit 0, got ${result.exitCode}. stderr: ${result.stderr}`);
   });
 
-  test('UserPromptSubmit: BLOCKS a drift prompt mentioning Project Gamma dashboard (exit 2)', () => {
+  test('UserPromptSubmit: BLOCKS a drift prompt mentioning project-gamma (exit 2)', () => {
     const result = invokeHook(USER_PROMPT_SUBMIT, {
       session_id: sessionId,
-      cwd: world.project-alpha,
-      prompt: 'Now switch gears and fix the Project Gamma inventory dashboard raw-material BOM validation.',
+      cwd: world.alpha,
+      prompt: 'Now switch gears and fix the project-gamma inventory demo raw-material BOM validation.',
     });
 
     assert.equal(
@@ -182,13 +184,13 @@ describe('Project Alpha→Project Gamma drift — the hero fixture', () => {
     assert.match(result.stderr, /lane-lock/, 'stderr must identify lane-lock');
     assert.match(result.stderr, /BLOCKED/, 'stderr must say BLOCKED');
     assert.match(result.stderr, /project-alpha/i, 'stderr must show the pinned project');
-    assert.match(result.stderr, /project-gamma|inventory-demo|inventory-demo/i, 'stderr must show the drift target');
+    assert.match(result.stderr, /project-gamma|inventory-demo/i, 'stderr must show the drift target');
   });
 
   test('UserPromptSubmit: BLOCKS a drift prompt referencing inventory-demo alias (exit 2)', () => {
     const result = invokeHook(USER_PROMPT_SUBMIT, {
       session_id: sessionId,
-      cwd: world.project-alpha,
+      cwd: world.alpha,
       prompt: 'open inventory-demo/src/Dashboard.tsx and add a new column',
     });
 
@@ -202,8 +204,8 @@ describe('Project Alpha→Project Gamma drift — the hero fixture', () => {
   test('UserPromptSubmit: BLOCKS a prompt with an absolute path outside the pin (exit 2)', () => {
     const result = invokeHook(USER_PROMPT_SUBMIT, {
       session_id: sessionId,
-      cwd: world.project-alpha,
-      prompt: `Update the file at ${world.project-gamma}/README.md with new content.`,
+      cwd: world.alpha,
+      prompt: `Update the file at ${world.gamma}/README.md with new content.`,
     });
 
     assert.equal(
@@ -217,7 +219,7 @@ describe('Project Alpha→Project Gamma drift — the hero fixture', () => {
   test('UserPromptSubmit: ALLOWS a drift prompt with the bypass phrase', () => {
     const result = invokeHook(USER_PROMPT_SUBMIT, {
       session_id: sessionId,
-      cwd: world.project-alpha,
+      cwd: world.alpha,
       prompt: '[cross-lane: project-gamma] Quick glance at inventory-demo for the pattern I need.',
     });
 
@@ -236,8 +238,8 @@ describe('Project Alpha→Project Gamma drift — the hero fixture', () => {
       {
         input: JSON.stringify({
           session_id: sessionId,
-          cwd: world.project-alpha,
-          prompt: 'Look at the Project Gamma dashboard code for the raw-material validation pattern.',
+          cwd: world.alpha,
+          prompt: 'Look at the project-gamma code for the raw-material validation pattern.',
         }),
         encoding: 'utf8',
         timeout: 5000,
@@ -257,10 +259,10 @@ describe('Project Alpha→Project Gamma drift — the hero fixture', () => {
   test('UserPromptSubmit: does NOT false-positive on substring collisions', () => {
     // "app" is a substring of "project-alpha" but shouldn't trigger
     // as a cross-project reference to some other project.
-    // "mapping" contains "app" — must NOT match "project-gamma-app" even if that alias existed.
+    // "mapping" contains "app" — must NOT match sibling aliases.
     const result = invokeHook(USER_PROMPT_SUBMIT, {
       session_id: sessionId,
-      cwd: world.project-alpha,
+      cwd: world.alpha,
       prompt: 'Refactor the route mapping and snapshot the api response shape.',
     });
 

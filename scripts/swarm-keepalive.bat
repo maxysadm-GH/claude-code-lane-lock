@@ -5,17 +5,17 @@ REM Runs every 5 minutes. Checks if swarm_runner.py is alive; if not, starts it.
 REM Prevents overnight dropouts after crashes, reboots, or OOM kills.
 REM
 REM Registered via schtasks:
-REM   schtasks /create /tn "LLMSwarmKeepalive" /tr "C:\Users\maxys\bin\llm-swarm\keepalive.bat" /sc minute /mo 5 /f
+REM   schtasks /create /tn "LLMSwarmKeepalive" /tr "~/bin\llm-swarm\keepalive.bat" /sc minute /mo 5 /f
 REM
 REM Kill switch:
 REM   schtasks /change /tn "LLMSwarmKeepalive" /disable
 
 SETLOCAL
 
-SET SWARM_DIR=C:\Users\maxys\.llm-swarm
+SET SWARM_DIR=~/.llm-swarm
 SET SWARM_PID=%SWARM_DIR%\swarm.pid
 SET SWARM_LOG=%SWARM_DIR%\logs\keepalive.log
-SET PYTHON=C:\Users\maxys\AppData\Local\Programs\Python\Python314\python.exe
+SET PYTHON=~/AppData\Local\Programs\Python\Python314\python.exe
 
 REM Ensure log dir exists
 if not exist "%SWARM_DIR%\logs" mkdir "%SWARM_DIR%\logs"

@@ -23,8 +23,8 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: 'npm'
 
-      - name: Install dev dependencies
-        run: npm install --only=dev
+      - name: Install dependencies (clean)
+        run: npm ci
 
       - name: Run full test suite
         run: npm test
@@ -39,4 +39,4 @@ jobs:
         run: node bin/install.mjs --target "${RUNNER_TEMP}/lane-lock-ci-settings.json"
 
       - name: Hero drift fixture
-        run: node --test tests/e2e/project-alpha-project-gamma-drift.test.mjs
+        run: node --test tests/e2e/cross-project-drift.test.mjs

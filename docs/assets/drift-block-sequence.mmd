@@ -1,0 +1,36 @@
+%% claude-code-lane-lock — drift block sequence
+%% The hero mechanism: UserPromptSubmit exits 2, harness erases the prompt
+%% from context before any reasoning token fires.
+%%
+%% Render: https://mermaid.live, or drop inside a ```mermaid fence on GitHub.
+
+sequenceDiagram
+    autonumber
+    actor User
+    participant CC as Claude Code harness
+    participant UPS as UserPromptSubmit hook<br/>(bin/user-prompt-submit.mjs)
+    participant Match as lib/match.mjs
+    participant Pin as lib/pin.mjs
+    participant Lock as ~/.claude/lane-lock/<br/>sessions/&lt;session_id&gt;.json
+
+    Note over User,Lock: Session is pinned to ~/projects/project-alpha/
+
+    User->>CC: types "work on project-beta"
+    CC->>UPS: spawn hook, pipe {prompt, session_id, cwd} to stdin
+    UPS->>Pin: loadPin(session_id)
+    Pin->>Lock: read lockfile
+    Lock-->>Pin: { project_root: .../project-alpha, aliases: [project-alpha] }
+    Pin-->>UPS: pin = project-alpha
+    UPS->>Match: scanPrompt(prompt, siblingAliases)
+    Note right of Match: regex matches "project-beta"<br/>as sibling alias token
+    Match-->>UPS: { decision: "block", reason: "alias", token: "project-beta" }
+    UPS->>CC: stderr: "lane-lock: drift prompt BLOCKED before reasoning started<br/>(sibling 'project-beta' detected, pin=project-alpha)"
+    UPS->>CC: exit 2
+
+    rect rgba(220, 38, 38, 0.15)
+      Note over CC: harness sees exit 2 on UserPromptSubmit<br/>→ ERASES the prompt from context<br/>→ 0 reasoning tokens spent
+    end
+
+    CC-->>User: prompt erased, session still pinned to project-alpha
+
+    Note over User,Lock: To cross lanes on purpose, prefix the prompt:<br/>"[cross-lane: project-beta] glance at the pattern"<br/>match.mjs sees the escape hatch → allow + warn

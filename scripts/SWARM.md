@@ -1,6 +1,6 @@
 # llm-swarm — MBACIO autonomous swarm
 
-**Orchestrator location (tonight)**: M51 (`C:\Users\maxys\.llm-swarm\`)
+**Orchestrator location (tonight)**: M51 (`~/.llm-swarm\`)
 **Orchestrator location (target)**: TRON once sshd is restored
 **Lane-lock deployed**: claude-code-lane-lock, project-alpha, project-beta, Project Gamma/inventory-demo — all commits landed 2026-04-08
 
