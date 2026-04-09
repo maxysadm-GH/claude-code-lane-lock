@@ -1,0 +1,28 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.3.0/schema.json",
+  "files": {
+    "include": ["lib/**", "bin/**", "scripts/**", "tests/**"],
+    "exclude": ["node_modules", ".claude", ".planning", ".llm-swarm", "docs"]
+  },
+  "linter": {
+    "rules": {
+      "recommended": true,
+      "style": {
+        "useImportType": false
+      }
+    }
+  },
+  "formatter": {
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100,
+    "lineEnding": "lf"
+  },
+  "javascript": {
+    "formatter": {
+      "semicolons": "always",
+      "quoteStyle": "single",
+      "trailingCommas": "all"
+    }
+  }
+}
