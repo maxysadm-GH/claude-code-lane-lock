@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "comment": "Project-scoped lane-lock config for claude-code-lane-lock development. Declares our known sibling projects so simulate + drift detection work when Claude Code is started in this repo.",
+
+  "knownProjects": [
+    {
+      "name": "claude-code-lane-lock",
+      "aliases": ["claude-code-lane-lock", "lane-lock", "cclane"],
+      "root": "~/Projects/claude-code-lane-lock"
+    },
+    {
+      "name": "project-alpha",
+      "aliases": ["project-alpha", "project-alpha", "carevoice"],
+      "root": "~/Projects/project-alpha"
+    },
+    {
+      "name": "project-beta",
+      "aliases": ["project-beta", "project-beta", "mind-palace"],
+      "root": "~/Projects/project-beta"
+    },
+    {
+      "name": "project-gamma",
+      "aliases": ["project-gamma", "inventory-demo", "inventory-demo", "dashboard-demo", "vosges"],
+      "root": "~/Project Gamma/inventory-demo"
+    },
+    {
+      "name": "mbacio",
+      "aliases": ["mbacio", "mbacio-reports", "mbacio-docs"],
+      "root": "~/OneDrive - MBACIO/_CODE"
+    }
+  ],
+
+  "trustedSiblings": [],
+  "overridePhrases": ["[cross-lane:", "temporarily look at"],
+  "haikuEnabled": false,
+  "logLevel": "info",
+  "mode": "read-warn-write-block"
+}
