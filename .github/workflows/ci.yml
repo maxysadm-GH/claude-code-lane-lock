@@ -26,8 +26,25 @@ jobs:
       - name: Install dependencies (clean)
         run: npm ci
 
-      - name: Run full test suite
-        run: npm test
+      - name: Debug environment
+        run: |
+          node --version
+          npm --version
+          git --version
+          echo "os=$RUNNER_OS"
+          ls -la tests/unit/ tests/e2e/
+
+      - name: Test paths.mjs
+        run: node --test tests/unit/paths.test.mjs
+
+      - name: Test pin.mjs
+        run: node --test tests/unit/pin.test.mjs
+
+      - name: Test match.mjs
+        run: node --test tests/unit/match.test.mjs
+
+      - name: Test cross-project drift (e2e hero)
+        run: node --test tests/e2e/cross-project-drift.test.mjs
 
       - name: Smoke test install script (POSIX)
         if: runner.os != 'Windows'
