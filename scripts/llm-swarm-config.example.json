@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "comment": "MBACIO autonomous swarm — LLM dispatch config. OAuth-first, API-fallback with hard daily caps. Written 2026-04-08 after $75/20min TRON API burn incident.",
+
+  "spend_caps_usd": {
+    "per_day_total": 50.0,
+    "per_day_per_provider": {
+      "openai": 10.0,
+      "gemini": 10.0,
+      "anthropic": 5.0
+    },
+    "circuit_breaker_action": "refuse_and_escalate",
+    "telegram_alert_at_pct": 80,
+    "telegram_halt_at_pct": 100
+  },
+
+  "provider_preferences": {
+    "claude": {
+      "preferred_auth": "claude_code_cli",
+      "fallback_auth": "anthropic_api_key",
+      "rationale": "Claude Max subscription via Claude Code CLI. API only for runtime fuzzy-judgment in lane-lock itself (<$5/mo)."
+    },
+    "gemini": {
+      "preferred_auth": "vertex_adc_oauth",
+      "fallback_auth": "gemini_api_key",
+      "rationale": "Vertex AI with `gcloud auth application-default login`. API fallback ONLY with hard daily cap."
+    },
+    "openai": {
+      "preferred_auth": "codex_cli_subscription",
+      "fallback_auth": "openai_api_key",
+      "rationale": "Codex CLI via ChatGPT Plus/Pro sub. API fallback ONLY with hard daily cap."
+    },
+    "ollama": {
+      "preferred_auth": "local",
+      "fallback_auth": null,
+      "rationale": "M51 local, zero cost, no fallback needed."
+    }
+  },
+
+  "role_routing": {
+    "judgment": ["claude", "claude-opus-4-6"],
+    "architecture": ["claude", "claude-opus-4-6"],
+    "qa": ["claude", "claude-opus-4-6"],
+    "code-gen-quality": ["gemini", "gemini-2.5-pro"],
+    "code-gen-fast": ["openai", "gpt-4.1"],
+    "code-gen-bulk": ["ollama", "glm-4.7-flash:latest"],
+    "boilerplate": ["ollama", "qwen3-coder:latest"],
+    "reasoning": ["openai", "gpt-5"],
+    "cheap-reasoning": ["openai", "o4-mini"],
+    "classification": ["claude", "claude-haiku-4-5-20251001"],
+    "long-context": ["gemini", "gemini-2.5-pro"],
+    "multimodal": ["openai", "gpt-4o"]
+  },
+
+  "estimated_pricing_per_mtok_usd": {
+    "comment": "Used for spend-cap estimation. Updated 2026-04-08. Re-verify quarterly.",
+    "claude-opus-4-6": {"input": 15.0, "output": 75.0},
+    "claude-sonnet-4-6": {"input": 3.0, "output": 15.0},
+    "claude-haiku-4-5-20251001": {"input": 1.0, "output": 5.0},
+    "gemini-2.5-pro": {"input": 1.25, "output": 5.0},
+    "gemini-2.0-flash": {"input": 0.075, "output": 0.30},
+    "gpt-5": {"input": 5.0, "output": 20.0},
+    "gpt-4.1": {"input": 2.0, "output": 8.0},
+    "o4-mini": {"input": 1.10, "output": 4.40},
+    "gpt-4o": {"input": 2.50, "output": 10.0},
+    "ollama-local": {"input": 0.0, "output": 0.0}
+  }
+}
