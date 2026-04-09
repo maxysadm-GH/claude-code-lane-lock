@@ -1,22 +1,20 @@
 name: CI
 
-once: false
-
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   test:
+    name: test (${{ matrix.os }}, node ${{ matrix.node }})
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         node: [20, 22]
-      fail-fast: false
-
     steps:
       - uses: actions/checkout@v4
 
@@ -25,14 +23,20 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: 'npm'
 
-      - run: npm install --only=dev
+      - name: Install dev dependencies
+        run: npm install --only=dev
 
-      - run: npm test
+      - name: Run full test suite
+        run: npm test
 
-      - run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            node bin/install.mjs --target C:\\tmp\\test-settings.json
-          else
-            node bin/install.mjs --target /tmp/test-settings.json
-          fi
+      - name: Smoke test install script (POSIX)
+        if: runner.os != 'Windows'
+        run: node bin/install.mjs --target "${RUNNER_TEMP}/lane-lock-ci-settings.json"
+
+      - name: Smoke test install script (Windows)
+        if: runner.os == 'Windows'
         shell: bash
+        run: node bin/install.mjs --target "${RUNNER_TEMP}/lane-lock-ci-settings.json"
+
+      - name: Hero drift fixture
+        run: node --test tests/e2e/project-alpha-project-gamma-drift.test.mjs
