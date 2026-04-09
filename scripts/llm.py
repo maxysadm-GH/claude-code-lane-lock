@@ -40,6 +40,13 @@ import subprocess
 import sys
 import time
 import urllib.request
+
+# Force stdout/stderr to UTF-8 on Windows (cp1252 default can't encode common unicode).
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
 from dataclasses import dataclass, asdict, field
 from pathlib import Path
 from typing import Optional
@@ -180,7 +187,8 @@ class LLMResponse:
     warnings: list = field(default_factory=list)
 
     def to_json(self) -> str:
-        return json.dumps(asdict(self), ensure_ascii=False)
+        # ensure_ascii=True so stdout never chokes on cp1252 Windows consoles.
+        return json.dumps(asdict(self), ensure_ascii=True)
 
 
 # -------- Provider callers --------
