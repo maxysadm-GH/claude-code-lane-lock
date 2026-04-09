@@ -479,7 +479,13 @@ def main():
     ap.add_argument("--poll-interval", type=int, default=30)
     args = ap.parse_args()
 
-    log("INFO", "swarm_runner_start", worker=WORKER_ID, once=args.once, dry_run=args.dry_run)
+    # Self-register PID for the dashboard.
+    try:
+        (SWARM_HOME / "swarm.pid").write_text(str(os.getpid()), encoding="utf-8")
+    except Exception:
+        pass
+
+    log("INFO", "swarm_runner_start", worker=WORKER_ID, pid=os.getpid(), once=args.once, dry_run=args.dry_run)
     projects = load_projects()
     log("INFO", "projects_loaded", count=len(projects.get("projects", {})))
 
