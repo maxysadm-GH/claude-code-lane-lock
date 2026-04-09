@@ -1,0 +1,9 @@
+{
+  "name": "claude-code-lane-lock",
+  "version": "0.1.0-dev",
+  "description": "Pin Claude Code sessions to their project root. Block cross-project drift at t=0 — before reasoning tokens spend.",
+  "author": "MBACIO",
+  "license": "MIT",
+  "homepage": "https://github.com/maxysadm-GH/claude-code-lane-lock",
+  "hooks": "./hooks/hooks.json"
+}

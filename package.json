@@ -1,0 +1,56 @@
+{
+  "name": "@mbacio/claude-code-lane-lock",
+  "version": "0.1.0-dev",
+  "description": "Pin Claude Code sessions to their project root. Block cross-project drift at t=0 — before reasoning tokens spend.",
+  "type": "module",
+  "license": "MIT",
+  "author": "MBACIO <max@mbacio.com>",
+  "homepage": "https://github.com/maxysadm-GH/claude-code-lane-lock",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/maxysadm-GH/claude-code-lane-lock.git"
+  },
+  "bugs": {
+    "url": "https://github.com/maxysadm-GH/claude-code-lane-lock/issues"
+  },
+  "keywords": [
+    "claude-code",
+    "claude",
+    "anthropic",
+    "hooks",
+    "plugin",
+    "ai-agents",
+    "developer-tools",
+    "swarm",
+    "drift-prevention"
+  ],
+  "engines": {
+    "node": ">=20.11"
+  },
+  "bin": {
+    "lane-lock": "./bin/lane-lock.mjs"
+  },
+  "scripts": {
+    "test": "node --test tests/unit/*.test.mjs tests/e2e/*.test.mjs",
+    "test:unit": "node --test tests/unit/*.test.mjs",
+    "test:e2e": "node --test tests/e2e/*.test.mjs",
+    "test:drift": "node --test tests/e2e/project-alpha-project-gamma-drift.test.mjs",
+    "lint": "biome check .",
+    "format": "biome format --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.0",
+    "@types/node": "^22.0.0"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    ".claude-plugin/",
+    "hooks/",
+    "schemas/",
+    "config.example.json",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ]
+}
