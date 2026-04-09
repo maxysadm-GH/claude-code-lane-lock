@@ -30,12 +30,15 @@ describe('caseCompare', () => {
     assert.strictEqual(caseCompare('foo', 'foo'), true);
   });
 
-  test('returns true for different-case strings on win32 and darwin', () => {
-    // Mock platform as win32 for testing
-    const originalPlatform = process.platform;
-    Object.defineProperty(process, 'platform', { value: 'win32' });
-    assert.strictEqual(caseCompare('Foo', 'foo'), true);
-    Object.defineProperty(process, 'platform', { value: originalPlatform });
+  test('platform-appropriate case handling', () => {
+    // CASE_INSENSITIVE is computed at module load time from process.platform,
+    // so runtime mocking does not work. Test the actual behavior on this platform.
+    const result = caseCompare('Foo', 'foo');
+    if (process.platform === 'win32' || process.platform === 'darwin') {
+      assert.strictEqual(result, true, 'win32/darwin must compare case-insensitively');
+    } else {
+      assert.strictEqual(result, false, 'linux must compare case-sensitively');
+    }
   });
 });
 

@@ -27,6 +27,7 @@ jobs:
         run: npm ci
 
       - name: Debug environment
+        shell: bash
         run: |
           node --version
           npm --version
