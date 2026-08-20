@@ -97,6 +97,7 @@ async function main() {
       pinName: name,
       pinAliases: aliases,
       trustedSiblings: config.trustedSiblings || [],
+      codeRoots: config.codeRoots || [],
       knownProjects: config.knownProjects || [],
       context: {
         caseSensitive: process.platform === 'linux',
@@ -128,6 +129,7 @@ async function main() {
     name: pin.pinName,
     aliases: pin.pinAliases,
     trustedSiblings: pin.trustedSiblings,
+    codeRoots: pin.codeRoots || [],
   };
 
   const result = match(prompt, matchInput, pin.knownProjects);

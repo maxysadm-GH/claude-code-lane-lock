@@ -64,6 +64,7 @@ async function main() {
     pinName: name,
     pinAliases: aliases,
     trustedSiblings: config.trustedSiblings || [],
+      codeRoots: config.codeRoots || [],
     knownProjects: config.knownProjects || [],
     context: {
       caseSensitive: process.platform === 'linux',
