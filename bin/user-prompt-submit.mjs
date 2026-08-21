@@ -99,6 +99,7 @@ async function main() {
       pinAliases: aliases,
       trustedSiblings: config.trustedSiblings || [],
       codeRoots: config.codeRoots || [],
+      promptGate: config.promptGate || 'warn',
       knownProjects: config.knownProjects || [],
       context: {
         caseSensitive: process.platform === 'linux',
@@ -136,6 +137,65 @@ async function main() {
   const result = match(prompt, matchInput, pin.knownProjects);
 
   if (result.decision === 'block') {
+    // How hard should drift be enforced HERE?
+    //
+    // Exit 2 on UserPromptSubmit DESTROYS the user's input before any reasoning
+    // runs. That penalty is only acceptable if the detector is precise, and it
+    // cannot be: it reads free English text, so its false-positive surface is
+    // every sentence a person might type. Four rounds of narrowing (stopwords,
+    // containers, corroboration, redirects) each closed one class and left the
+    // next one open, while read-only research prompts — "compare X with
+    // /Users/max/Projects/other/README.md" — were still being deleted.
+    //
+    // The cost asymmetry settles it:
+    //   false positive -> the user's prompt is gone, the session sits dead
+    //   false negative -> the model is told which lane it is in and proceeds;
+    //                     PreToolUse still hard-denies any actual write outside
+    //                     the pin, using concrete file targets rather than prose.
+    //
+    // So the default is to INFORM, not erase. Hard blocking remains available
+    // via config `promptGate: "block"` or LANE_LOCK_PROMPT_GATE=block.
+    const gateMode =
+      process.env.LANE_LOCK_PROMPT_GATE || pin.promptGate || 'warn';
+
+    if (gateMode !== 'block') {
+      log({
+        level: 'info',
+        source: 'user-prompt-submit',
+        sessionId,
+        event: 'drift_warned',
+        reason: result.reason,
+        matchedTokens: result.matchedTokens,
+        matchedProjects: result.matchedProjects || [],
+        matchedPaths: result.matchedPaths,
+        promptExcerpt: prompt.slice(0, 200),
+        pinName: pin.pinName,
+        pinRoot: pin.pinRoot,
+      });
+
+      // Feed the lane back to the model instead of deleting the question.
+      const context =
+        `[lane-lock] This session is pinned to '${pin.pinName}' (${pin.pinRoot}). ` +
+        `The prompt references ${
+          result.matchedPaths.length > 0
+            ? `path(s) outside it: ${result.matchedPaths.join(', ')}`
+            : `other project(s): ${(result.matchedProjects || result.matchedTokens).join(', ')}`
+        }. ` +
+        `Reading or discussing them is fine. Do NOT create or modify files outside the pin; ` +
+        `if work genuinely belongs in another project, say so and let the user open a session there.`;
+
+      process.stdout.write(
+        `${JSON.stringify({
+          hookSpecificOutput: {
+            hookEventName: 'UserPromptSubmit',
+            additionalContext: context,
+          },
+        })}\n`
+      );
+      process.stderr.write(`[lane-lock] ${result.message}\n`);
+      return process.exit(0);
+    }
+
     // Log before exiting: UserPromptSubmit blocks were previously absent from
     // drift.log.jsonl, so an audit could not see which rule erased a prompt.
     log({

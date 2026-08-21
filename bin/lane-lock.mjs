@@ -255,6 +255,7 @@ function cmdSimulate(args) {
     aliases,
     trustedSiblings: config.trustedSiblings || [],
       codeRoots: config.codeRoots || [],
+      promptGate: config.promptGate || 'warn',
   };
   const result = match(prompt, pin, config.knownProjects || []);
   process.stdout.write(`pin:       ${name} (${resolution.root})\n`);

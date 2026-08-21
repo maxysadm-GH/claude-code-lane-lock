@@ -173,12 +173,31 @@ describe('Cross-project drift — the hero fixture', () => {
     assert.equal(result.exitCode, 0, `normal prompt must exit 0, got ${result.exitCode}. stderr: ${result.stderr}`);
   });
 
-  test('UserPromptSubmit: BLOCKS a drift prompt naming project-gamma AND its path (exit 2)', () => {
+  // Contract 2026-08-21: the prompt gate INFORMS by default and only erases
+  // under an explicit opt-in. Destroying user input on a prose heuristic had an
+  // unbounded false-positive surface; enforcement lives in PreToolUse, which
+  // judges real file targets. See tests/e2e/never-erase-real-prompts.test.mjs.
+  test('UserPromptSubmit: default mode WARNS on drift + names the lane (exit 0)', () => {
     const result = invokeHook(USER_PROMPT_SUBMIT, {
       session_id: sessionId,
       cwd: world.alpha,
       prompt: `Now switch gears and fix ${world.gamma}/src/bom.ts for the project-gamma inventory demo.`,
     });
+
+    assert.equal(result.exitCode, 0, `default must not erase. stderr: ${result.stderr}`);
+    assert.match(`${result.stdout}${result.stderr}`, /project-alpha/i, 'must name the pinned lane');
+  });
+
+  test('UserPromptSubmit: opt-in block mode erases a drift prompt (exit 2)', () => {
+    const result = invokeHook(
+      USER_PROMPT_SUBMIT,
+      {
+        session_id: sessionId,
+        cwd: world.alpha,
+        prompt: `Now switch gears and fix ${world.gamma}/src/bom.ts for the project-gamma inventory demo.`,
+      },
+      { LANE_LOCK_PROMPT_GATE: 'block' }
+    );
 
     assert.equal(
       result.exitCode,
@@ -226,12 +245,16 @@ describe('Cross-project drift — the hero fixture', () => {
     assert.match(result.stderr, /inventory-demo|project-gamma/i);
   });
 
-  test('UserPromptSubmit: BLOCKS a prompt with an absolute path outside the pin (exit 2)', () => {
-    const result = invokeHook(USER_PROMPT_SUBMIT, {
-      session_id: sessionId,
-      cwd: world.alpha,
-      prompt: `Update the file at ${world.gamma}/README.md with new content.`,
-    });
+  test('UserPromptSubmit: absolute path outside the pin erases only in block mode (exit 2)', () => {
+    const result = invokeHook(
+      USER_PROMPT_SUBMIT,
+      {
+        session_id: sessionId,
+        cwd: world.alpha,
+        prompt: `Update the file at ${world.gamma}/README.md with new content.`,
+      },
+      { LANE_LOCK_PROMPT_GATE: 'block' }
+    );
 
     assert.equal(
       result.exitCode,
