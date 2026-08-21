@@ -1,13 +1,13 @@
 {
   "name": "@mbacio/claude-code-lane-lock",
   "version": "0.1.0-dev",
-  "description": "Pin Claude Code sessions to their project root. Block cross-project drift at t=0 — before reasoning tokens spend.",
+  "description": "Pin Claude Code sessions to their project root. Block cross-project drift at t=0 \u2014 before reasoning tokens spend.",
   "type": "module",
   "license": "Apache-2.0",
   "author": "MBACIO LLC <max@mbacio.com> (https://mbacio.com)",
   "contributors": [
-    "Claude Opus 4.6 <noreply@anthropic.com> (AI co-author — planning, architecture, QA)",
-    "Claude Sonnet 4.6 <noreply@anthropic.com> (AI co-author — documentation)"
+    "Claude Opus 4.6 <noreply@anthropic.com> (AI co-author \u2014 planning, architecture, QA)",
+    "Claude Sonnet 4.6 <noreply@anthropic.com> (AI co-author \u2014 documentation)"
   ],
   "homepage": "https://github.com/maxysadm-GH/claude-code-lane-lock",
   "repository": {
@@ -35,8 +35,8 @@
     "lane-lock": "./bin/lane-lock.mjs"
   },
   "scripts": {
-    "test": "node --test tests/unit/paths.test.mjs tests/unit/pin.test.mjs tests/unit/match.test.mjs tests/e2e/cross-project-drift.test.mjs",
-    "test:unit": "node --test tests/unit/paths.test.mjs tests/unit/pin.test.mjs tests/unit/match.test.mjs",
+    "test": "node --test tests/unit/paths.test.mjs tests/unit/pin.test.mjs tests/unit/match.test.mjs tests/unit/bash.test.mjs tests/e2e/cross-project-drift.test.mjs",
+    "test:unit": "node --test tests/unit/paths.test.mjs tests/unit/pin.test.mjs tests/unit/match.test.mjs tests/unit/bash.test.mjs",
     "test:e2e": "node --test tests/e2e/cross-project-drift.test.mjs",
     "test:drift": "node --test tests/e2e/cross-project-drift.test.mjs",
     "lint": "biome check .",

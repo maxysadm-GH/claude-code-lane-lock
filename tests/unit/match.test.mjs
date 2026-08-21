@@ -22,9 +22,9 @@ describe('match()', () => {
     assert.deepStrictEqual(result.matchedTokens, []);
   });
 
-  test('prompt with known sibling alias returns decision=block, reason=alias', () => {
+  test('prompt with known sibling alias warns (uncorroborated), reason=alias', () => {
     const result = match('project-b is broken', pin, knownProjects);
-    assert.strictEqual(result.decision, 'block');
+    assert.strictEqual(result.decision, 'warn');
     assert.strictEqual(result.reason, 'alias');
     assert.deepStrictEqual(result.matchedTokens, ['project-b']);
   });
@@ -90,6 +90,29 @@ describe('match()', () => {
 
     const allowed = match('durable disk at /home/site/cc-data', macPin, winProjects);
     assert.strictEqual(allowed.decision, 'allow');
+  });
+
+
+  // Regression 2026-08-20 #2: naming a thing is not intending to work in its
+  // repo. "ShipperHQ" is a shipping vendor discussed constantly in VHC work AND
+  // a repo name (ShipperHQ-BOX) — a bare mention erased the prompt at exit 2.
+  // Un-corroborated alias mentions must WARN, never block.
+  test('bare alias mention warns instead of blocking', () => {
+    const result = match('audit the ShipperHQ rate rules for the sales board', pin, [
+      { name: 'ShipperHQ-BOX', aliases: ['ShipperHQ'], root: '/fake/ShipperHQ-BOX' },
+    ]);
+    assert.strictEqual(result.decision, 'warn');
+    assert.strictEqual(result.reason, 'alias');
+    assert.deepStrictEqual(result.matchedTokens, ['ShipperHQ']);
+  });
+
+  test('alias mention corroborated by a path inside that project still blocks', () => {
+    const result = match(
+      'open /fake/project-b/src/app.js and fix project-b',
+      pin,
+      knownProjects
+    );
+    assert.strictEqual(result.decision, 'block');
   });
 
   test('prompt with pin own alias returns decision=allow', () => {

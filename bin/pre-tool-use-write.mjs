@@ -20,14 +20,12 @@
 import { readStdinJson } from '../lib/stdin.mjs';
 import { readPin } from '../lib/pin.mjs';
 import { isInside, resolveProjectRoot } from '../lib/paths.mjs';
+import { isBashWrite, commandTargetsPin } from '../lib/bash.mjs';
 import { preToolUseDeny, allowSilently } from '../lib/exit.mjs';
 import { log } from '../lib/log.mjs';
 
 const WRITE_TOOLS = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit']);
 
-// Simple heuristic to detect bash commands that write.
-const BASH_WRITE_PATTERN =
-  /(^|\s|;|&&|\|\|)\s*(?:rm|mv|cp|mkdir|touch|dd|install|tee|sed\s+-i|chmod|chown|git\s+(?:commit|reset|checkout|rebase|clean|push|merge|pull|rm|add)|npm\s+install|pip\s+install|cargo\s+install|go\s+install)\b|[>]{1,2}\s*[\/\w]/i;
 
 async function main() {
   const input = await readStdinJson();
@@ -100,7 +98,14 @@ async function main() {
       bashInside = true; // Fail open on bad path.
     }
 
-    if (!bashInside && BASH_WRITE_PATTERN.test(command)) {
+    // The shell's cwd is only a proxy for intent. A command that cd's into the
+    // pin, or names only paths under it, is in-lane no matter where the shell
+    // happens to sit — blocking those stalled real work from /private/tmp.
+    if (!bashInside && commandTargetsPin(command, pinRoot)) {
+      bashInside = true;
+    }
+
+    if (!bashInside && isBashWrite(command)) {
       log({
         level: 'warn',
         source: 'pre-tool-use-write',

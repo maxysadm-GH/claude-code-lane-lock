@@ -169,11 +169,11 @@ describe('Cross-project drift — the hero fixture', () => {
     assert.equal(result.exitCode, 0, `normal prompt must exit 0, got ${result.exitCode}. stderr: ${result.stderr}`);
   });
 
-  test('UserPromptSubmit: BLOCKS a drift prompt mentioning project-gamma (exit 2)', () => {
+  test('UserPromptSubmit: BLOCKS a drift prompt naming project-gamma AND its path (exit 2)', () => {
     const result = invokeHook(USER_PROMPT_SUBMIT, {
       session_id: sessionId,
       cwd: world.alpha,
-      prompt: 'Now switch gears and fix the project-gamma inventory demo raw-material BOM validation.',
+      prompt: `Now switch gears and fix ${world.gamma}/src/bom.ts for the project-gamma inventory demo.`,
     });
 
     assert.equal(
@@ -187,7 +187,27 @@ describe('Cross-project drift — the hero fixture', () => {
     assert.match(result.stderr, /project-gamma|inventory-demo/i, 'stderr must show the drift target');
   });
 
-  test('UserPromptSubmit: BLOCKS a drift prompt referencing inventory-demo alias (exit 2)', () => {
+  // Contract change 2026-08-20: a bare alias mention is weak evidence and must
+  // NOT erase the prompt. Project names collide with vendors and everyday nouns
+  // (ShipperHQ, mbacio, docs, reports), and blocking on them cost real prompts.
+  test('UserPromptSubmit: WARNS but allows a bare project-gamma mention (exit 0)', () => {
+    const result = invokeHook(USER_PROMPT_SUBMIT, {
+      session_id: sessionId,
+      cwd: world.alpha,
+      prompt: 'Now switch gears and fix the project-gamma inventory demo raw-material BOM validation.',
+    });
+
+    assert.equal(
+      result.exitCode,
+      0,
+      `bare alias mention must NOT erase the prompt. got ${result.exitCode}. stderr: ${result.stderr}`
+    );
+    assert.match(result.stderr, /lane-lock/, 'stderr must identify lane-lock');
+    assert.match(result.stderr, /project-gamma/i, 'warning must name the mentioned project');
+  });
+
+  test('UserPromptSubmit: WARNS on a relative inventory-demo path (exit 0)', () => {
+    // Relative paths carry no container evidence, so this is alias-only.
     const result = invokeHook(USER_PROMPT_SUBMIT, {
       session_id: sessionId,
       cwd: world.alpha,
@@ -196,9 +216,10 @@ describe('Cross-project drift — the hero fixture', () => {
 
     assert.equal(
       result.exitCode,
-      2,
-      `alias drift must exit 2. got ${result.exitCode}. stderr: ${result.stderr}`
+      0,
+      `alias-only drift must warn, not erase. got ${result.exitCode}. stderr: ${result.stderr}`
     );
+    assert.match(result.stderr, /inventory-demo|project-gamma/i);
   });
 
   test('UserPromptSubmit: BLOCKS a prompt with an absolute path outside the pin (exit 2)', () => {
