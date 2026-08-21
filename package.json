@@ -32,11 +32,12 @@
     "node": ">=20.11"
   },
   "bin": {
-    "lane-lock": "./bin/lane-lock.mjs"
+    "lane-lock": "./bin/lane-lock.mjs",
+    "lane-lock-links": "bin/lane-lock-links.mjs"
   },
   "scripts": {
-    "test": "node --test tests/unit/paths.test.mjs tests/unit/pin.test.mjs tests/unit/match.test.mjs tests/unit/bash.test.mjs tests/e2e/cross-project-drift.test.mjs",
-    "test:unit": "node --test tests/unit/paths.test.mjs tests/unit/pin.test.mjs tests/unit/match.test.mjs tests/unit/bash.test.mjs",
+    "test": "node --test tests/unit/paths.test.mjs tests/unit/pin.test.mjs tests/unit/match.test.mjs tests/unit/bash.test.mjs tests/unit/links.test.mjs tests/e2e/cross-project-drift.test.mjs",
+    "test:unit": "node --test tests/unit/paths.test.mjs tests/unit/pin.test.mjs tests/unit/match.test.mjs tests/unit/bash.test.mjs tests/unit/links.test.mjs",
     "test:e2e": "node --test tests/e2e/cross-project-drift.test.mjs",
     "test:drift": "node --test tests/e2e/cross-project-drift.test.mjs",
     "lint": "biome check .",

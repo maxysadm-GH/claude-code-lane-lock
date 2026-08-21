@@ -39,12 +39,16 @@ const cleanup = [];
  * Invoke a hook script as Claude Code would: spawn node, pipe JSON to stdin,
  * capture stdout + stderr + exit code.
  */
-function invokeHook(scriptPath, payload) {
+const TEST_LOG_DIR = mkdtempSync(join(tmpdir(), 'lane-lock-log-'));
+
+function invokeHook(scriptPath, payload, extraEnv = {}) {
   const result = spawnSync(process.execPath, [scriptPath], {
     input: JSON.stringify(payload),
     encoding: 'utf8',
     timeout: 5000,
     stdio: ['pipe', 'pipe', 'pipe'],
+    // Never append fixture events to the developer's real drift log.
+    env: { ...process.env, LANE_LOCK_LOG_DIR: TEST_LOG_DIR, ...extraEnv },
   });
   return {
     exitCode: result.status,
@@ -265,7 +269,7 @@ describe('Cross-project drift — the hero fixture', () => {
         encoding: 'utf8',
         timeout: 5000,
         stdio: ['pipe', 'pipe', 'pipe'],
-        env: { ...process.env, CLAUDE_ALLOW_CROSS_PROJECT: 'project-gamma' },
+        env: { ...process.env, LANE_LOCK_LOG_DIR: TEST_LOG_DIR, CLAUDE_ALLOW_CROSS_PROJECT: 'project-gamma' },
       }
     );
 

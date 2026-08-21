@@ -32,6 +32,7 @@ import { readPin, writePin } from '../lib/pin.mjs';
 import { resolveProjectRoot } from '../lib/paths.mjs';
 import { loadConfig, inferPinNameFromRoot } from '../lib/config.mjs';
 import { match } from '../lib/match.mjs';
+import { log } from '../lib/log.mjs';
 
 async function readStdin() {
   if (process.stdin.isTTY) return '';
@@ -135,6 +136,21 @@ async function main() {
   const result = match(prompt, matchInput, pin.knownProjects);
 
   if (result.decision === 'block') {
+    // Log before exiting: UserPromptSubmit blocks were previously absent from
+    // drift.log.jsonl, so an audit could not see which rule erased a prompt.
+    log({
+      level: 'warn',
+      source: 'user-prompt-submit',
+      sessionId,
+      event: 'prompt_blocked',
+      reason: result.reason,
+      matchedTokens: result.matchedTokens,
+      matchedPaths: result.matchedPaths,
+      promptExcerpt: prompt.slice(0, 200),
+      pinName: pin.pinName,
+      pinRoot: pin.pinRoot,
+    });
+
     // THE KILL. Exit 2 + stderr message.
     const lines = [
       '',
@@ -162,6 +178,23 @@ async function main() {
   }
 
   if (result.decision === 'warn') {
+    // A cross-project mention is a SIGNAL, not just a near-miss. When this
+    // session's work names another project, that is evidence of a real
+    // dependency between them — exactly the edge the second brain wants to
+    // record. Emit it as structured data so a rollup can link both nodes.
+    if (result.reason === 'alias' && result.matchedTokens.length > 0) {
+      log({
+        level: 'info',
+        source: 'user-prompt-submit',
+        sessionId,
+        event: 'cross_project_mention',
+        pinName: pin.pinName,
+        pinRoot: pin.pinRoot,
+        mentioned: result.matchedProjects || [],
+        mentionedVia: result.matchedTokens,
+        promptExcerpt: prompt.slice(0, 200),
+      });
+    }
     return allowWithWarning(result.message);
   }
 

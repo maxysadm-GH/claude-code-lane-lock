@@ -1,0 +1,211 @@
+#!/usr/bin/env node
+/**
+ * lane-lock-links — roll cross-project mentions up into a second-brain node.
+ *
+ * lane-lock already knows, for every prompt, which OTHER projects the current
+ * lane's work referred to. That is not merely a drift near-miss: it is observed
+ * evidence that project A's work depends on project B. This command turns those
+ * observations into an edge list the Obsidian vault can consume, so the two
+ * nodes link instead of the signal being thrown away.
+ *
+ * Reads:  ~/.claude/lane-lock/drift.log.jsonl  (event: cross_project_mention)
+ * Writes: a Markdown note with [[wikilinks]], one section per pinned project.
+ *
+ * Usage:
+ *   lane-lock-links [--out <path>] [--since <ISO8601>] [--min <count>] [--json]
+ *
+ * Read-only with respect to the log; the output note is rewritten in full each
+ * run (it is derived data, never hand-edited).
+ *
+ * @module bin/lane-lock-links
+ */
+
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { homedir } from 'node:os';
+
+const LOG_FILE = join(homedir(), '.claude', 'lane-lock', 'drift.log.jsonl');
+const DEFAULT_OUT = join(
+  homedir(),
+  'Obsidian-Personal',
+  '0-Registry',
+  'cross-project-dependencies.md'
+);
+
+function parseArgs(argv) {
+  const args = { out: DEFAULT_OUT, since: null, min: 1, json: false };
+  for (let i = 0; i < argv.length; i += 1) {
+    const a = argv[i];
+    if (a === '--out') args.out = argv[++i];
+    else if (a === '--since') args.since = argv[++i];
+    else if (a === '--min') args.min = Number(argv[++i]) || 1;
+    else if (a === '--json') args.json = true;
+    else if (a === '--help' || a === '-h') args.help = true;
+  }
+  return args;
+}
+
+/**
+ * Read cross_project_mention events out of the append-only drift log.
+ * @param {string} file
+ * @param {string|null} since ISO timestamp lower bound (exclusive)
+ * @returns {Array<object>}
+ */
+export function readMentions(file, since = null) {
+  if (!existsSync(file)) return [];
+  const out = [];
+  for (const line of readFileSync(file, 'utf8').split('\n')) {
+    if (!line.trim()) continue;
+    let row;
+    try {
+      row = JSON.parse(line);
+    } catch {
+      continue; // a torn final line must never break the rollup
+    }
+    if (row.event !== 'cross_project_mention') continue;
+    if (since && row.ts && row.ts <= since) continue;
+    out.push(row);
+  }
+  return out;
+}
+
+/**
+ * Aggregate mentions into directed edges: from the pinned project to each
+ * project its work referenced.
+ *
+ * @param {Array<object>} mentions
+ * @returns {Map<string, Map<string, {count: number, lastTs: string, samples: string[]}>>}
+ */
+export function buildEdges(mentions) {
+  const edges = new Map();
+  for (const m of mentions) {
+    const from = m.pinName;
+    if (!from) continue;
+    // An alias that resolves to several projects ("mbacio" -> 4 repos) is
+    // ambiguous: it is one observation, not N dependencies. Recording every
+    // candidate would invent edges that were never implied, so ambiguous
+    // mentions are skipped rather than guessed at.
+    const via = m.mentionedVia || [];
+    const ambiguous = new Set();
+    const byAlias = new Map();
+    for (let i = 0; i < (m.mentioned || []).length; i += 1) {
+      const alias = (via[i] || '').toLowerCase();
+      if (!alias) continue;
+      byAlias.set(alias, (byAlias.get(alias) || 0) + 1);
+    }
+    for (let i = 0; i < (m.mentioned || []).length; i += 1) {
+      const alias = (via[i] || '').toLowerCase();
+      if (alias && byAlias.get(alias) > 1) ambiguous.add(m.mentioned[i]);
+    }
+
+    for (let i = 0; i < (m.mentioned || []).length; i += 1) {
+      const to = m.mentioned[i];
+      if (!to || to === from) continue;
+      if (ambiguous.has(to)) continue;
+      if (!edges.has(from)) edges.set(from, new Map());
+      const targets = edges.get(from);
+      const cur = targets.get(to) || { count: 0, lastTs: '', samples: [] };
+      cur.count += 1;
+      if (m.ts > cur.lastTs) cur.lastTs = m.ts;
+      if (m.promptExcerpt && cur.samples.length < 3) {
+        cur.samples.push(m.promptExcerpt.replace(/\s+/g, ' ').slice(0, 120));
+      }
+      targets.set(to, cur);
+    }
+  }
+  return edges;
+}
+
+/**
+ * Render the edge list as an Obsidian note. Every project becomes a [[link]],
+ * so both ends of a dependency show up in each other's backlinks pane.
+ *
+ * @param {Map} edges
+ * @param {number} min minimum observations before an edge is listed
+ * @param {string} generatedAt
+ * @returns {string}
+ */
+export function renderNote(edges, min, generatedAt) {
+  const lines = [
+    '---',
+    'type: registry',
+    'status: generated',
+    'source: lane-lock cross_project_mention events',
+    'tags: [registry, cross-project, dependencies, lane-lock]',
+    `updated: ${generatedAt.slice(0, 10)}`,
+    '---',
+    '',
+    '# 🔗 Cross-project dependencies (observed)',
+    '',
+    '> Generated by `lane-lock-links` from what sessions ACTUALLY referenced —',
+    "> not from a hand-maintained list. When work pinned to one project names",
+    '> another, that mention is recorded here as a directed edge. Do not edit by',
+    '> hand; rerun the command.',
+    '',
+  ];
+
+  const froms = Array.from(edges.keys()).sort();
+  let edgeCount = 0;
+
+  if (froms.length === 0) {
+    lines.push('_No cross-project mentions recorded yet._', '');
+  }
+
+  for (const from of froms) {
+    const targets = Array.from(edges.get(from).entries())
+      .filter(([, v]) => v.count >= min)
+      .sort((a, b) => b[1].count - a[1].count);
+    if (targets.length === 0) continue;
+
+    lines.push(`## [[${from}]]`, '');
+    lines.push('| Depends on / references | Times | Last seen |');
+    lines.push('|---|---:|---|');
+    for (const [to, v] of targets) {
+      edgeCount += 1;
+      lines.push(`| [[${to}]] | ${v.count} | ${v.lastTs.slice(0, 10)} |`);
+    }
+    lines.push('');
+    for (const [to, v] of targets) {
+      if (v.samples.length === 0) continue;
+      lines.push(`- **[[${to}]]** seen in: ${v.samples.map((s) => `"${s}"`).join(' · ')}`);
+    }
+    lines.push('');
+  }
+
+  lines.push('---', `_${edgeCount} edge(s) across ${froms.length} project(s). Generated ${generatedAt}._`, '');
+  return lines.join('\n');
+}
+
+function main() {
+  const args = parseArgs(process.argv.slice(2));
+  if (args.help) {
+    process.stdout.write(
+      'Usage: lane-lock-links [--out <path>] [--since <ISO>] [--min <n>] [--json]\n'
+    );
+    return;
+  }
+
+  const mentions = readMentions(LOG_FILE, args.since);
+  const edges = buildEdges(mentions);
+
+  if (args.json) {
+    const flat = [];
+    for (const [from, targets] of edges) {
+      for (const [to, v] of targets) flat.push({ from, to, ...v });
+    }
+    process.stdout.write(`${JSON.stringify({ mentions: mentions.length, edges: flat }, null, 2)}\n`);
+    return;
+  }
+
+  const note = renderNote(edges, args.min, new Date().toISOString());
+  mkdirSync(dirname(args.out), { recursive: true });
+  writeFileSync(args.out, note, 'utf8');
+  process.stdout.write(
+    `lane-lock-links: ${mentions.length} mention(s) -> ${args.out}\n`
+  );
+}
+
+// Only run when invoked directly, so the pure functions above stay importable.
+if (process.argv[1] && process.argv[1].endsWith('lane-lock-links.mjs')) {
+  main();
+}
