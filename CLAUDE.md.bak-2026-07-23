@@ -1,0 +1,79 @@
+# CLAUDE.md — claude-code-lane-lock
+
+This file is auto-loaded by Claude Code sessions started in this repo. It primes the session with project ownership, active orchestration layers, and critical file locations so you do not need re-explanation.
+
+## What this repo is
+
+**`claude-code-lane-lock` v0.1.0** — a Claude Code plugin that pins interactive sessions to their git project root and blocks cross-project drift at t=0 via `UserPromptSubmit` exit 2 (before any reasoning token fires). Published under the MBACIO brand as an OSS portfolio piece. Solves an unsolved gap in the Claude Code ecosystem — 2 independent research passes confirmed no existing solution (see `.planning/research/SUMMARY.md`).
+
+## Critical file locations
+
+| Thing | Path |
+|---|---|
+| Plugin source — hooks | `bin/*.mjs` |
+| Plugin source — lib | `lib/*.mjs` |
+| Install script | `bin/install.mjs` |
+| CLI | `bin/lane-lock.mjs` |
+| Hero drift fixture (8/8 green) | `tests/e2e/navilum-vhc-drift.test.mjs` |
+| Plugin manifest | `.claude-plugin/plugin.json` |
+| Hooks manifest | `hooks/hooks.json` |
+| Master known-projects config | `.claude/lane-lock.json` |
+| Project state | `.planning/STATE.md` |
+| Roadmap | `.planning/ROADMAP.md` |
+| Phase 0 security audit | `.planning/phases/00-security-audit/AUDIT.md` |
+| Phase 1 launch playbook | `.planning/phases/01-research/LAUNCH-PLAYBOOK.md` |
+
+## Also in this repo (infrastructure the M51 fleet uses)
+
+This repo is the canonical home for the M51 swarm orchestration infrastructure. The runtime copies live at `~/.llm-swarm/` but the versioned source is here.
+
+| Infrastructure | Canonical path | Runtime path |
+|---|---|---|
+| Unified LLM dispatcher (OAuth-first, spend-capped) | `scripts/llm.py` | same — called directly |
+| Swarm runner daemon | `scripts/swarm_runner.py` | `~/.llm-swarm/swarm_runner.py` |
+| Dashboard | `scripts/swarm_dashboard.py` | `~/.llm-swarm/dashboard.py` |
+| Windows Task Scheduler keepalive | `scripts/swarm-keepalive.bat` | `C:/Users/maxys/bin/llm-swarm/keepalive.bat` |
+| Swarm config example | `scripts/llm-swarm-config.example.json` | `~/.llm-swarm/config.json` |
+| Swarm doc | `scripts/SWARM.md` | `~/.llm-swarm/swarm.md` |
+| Fleet-wide deploy script | (in `~/bin/llm-swarm/deploy-lane-lock-all.sh`) | ditto |
+
+When making changes to the swarm runner or dispatcher, edit the canonical copy in `scripts/`, commit here, then `cp` to the runtime path.
+
+## Lane-lock is self-hosted in this repo
+
+Yes, this repo dogfoods itself. `.claude/settings.json` has the 7 lane-lock hooks installed and `.claude/lane-lock.json` is the master config that every other repo on M51 inherits from. If you drift into discussing another MBACIO project inside this session, lane-lock blocks your prompt — test via `node bin/lane-lock.mjs simulate "fix the vhc dashboard"`.
+
+## Git identity + signing
+
+- `user.email = max@mbacio.com`
+- `user.name = MBACIO`
+- `commit.gpgsign = true`
+- `gpg.format = ssh` using `C:/Users/maxys/.ssh/id_ed25519.pub`
+- `gpg.ssh.program = C:/Windows/System32/OpenSSH/ssh-keygen.exe` (the Windows path — Git Bash's default fails silently)
+- Allowed signers file at `~/.config/git/allowed_signers`
+
+All commits in this repo should show `G` (Good signature) in `git log --show-signature`. If you get `N` (not signed), something broke — check the gpg.ssh.program path.
+
+## Swarm branches
+
+There are ~24 `swarm/TASK-*` branches in this repo from the overnight autonomous run on 2026-04-08. They are draft commits produced by `~/.llm-swarm/swarm_runner.py` on Ollama qwen3-coder. They are NOT merged to main — each needs human review before merge. See `.planning/STATE.md` for the morning-review checklist.
+
+## Reading order for a fresh session
+
+1. This file (you are here)
+2. `.planning/STATE.md` — current state + next actions
+3. `.planning/research/SUMMARY.md` — dense research digest
+4. `.planning/PROJECT.md` — full project context
+5. `.planning/ROADMAP.md` — 10-phase plan
+
+## Do NOT
+
+- Do NOT call Anthropic/OpenAI/Gemini SDKs directly — always go through `scripts/llm.py` so spend caps apply
+- Do NOT commit to `main` directly without review
+- Do NOT modify `scripts/swarm_runner.py` without syncing to `~/.llm-swarm/` afterward
+- Do NOT disable lane-lock to work around a false positive — use `[cross-lane: <project>]` prompt phrase instead
+- Do NOT push to the remote yet — the repo is not public and Phase 10 launch is gated on Max's review
+
+## Orchestration (inherited from global)
+
+See `~/CLAUDE.md` → "MODEL ORCHESTRATION" for the native arsenal — delegate via `mcp__ollama__*`, `mcp__chat-minimax__chat`, `mcp__chat-gemini__chat`, `mcp__chat-grok__chat`, or the Codex adapter (`~/.claude/tools/codex_adapter.py`) — a first-class tool call, never a shell-out. This project inherits that rule: route bulk reads / long-context judgment / structured extraction to the fitting provider before spending Claude tokens.
