@@ -35,8 +35,8 @@
     "lane-lock": "./bin/lane-lock.mjs"
   },
   "scripts": {
-    "test": "node --test tests/unit/paths.test.mjs tests/unit/pin.test.mjs tests/unit/match.test.mjs tests/e2e/cross-project-drift.test.mjs",
-    "test:unit": "node --test tests/unit/paths.test.mjs tests/unit/pin.test.mjs tests/unit/match.test.mjs",
+    "test": "node --test tests/unit/paths.test.mjs tests/unit/pin.test.mjs tests/unit/match.test.mjs tests/unit/config.test.mjs tests/e2e/cross-project-drift.test.mjs",
+    "test:unit": "node --test tests/unit/paths.test.mjs tests/unit/pin.test.mjs tests/unit/match.test.mjs tests/unit/config.test.mjs",
     "test:e2e": "node --test tests/e2e/cross-project-drift.test.mjs",
     "test:drift": "node --test tests/e2e/cross-project-drift.test.mjs",
     "lint": "biome check .",

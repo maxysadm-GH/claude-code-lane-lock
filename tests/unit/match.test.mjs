@@ -68,3 +68,66 @@ describe('match()', () => {
     assert.strictEqual(result.reason, 'none');
   });
 });
+
+// Auto-generated alias lists give every hyphenated project its first token as
+// an alias, so a shared prefix ends up claimed by several projects at once.
+// Such a token names a convention, not a lane, and must never block.
+const sharedPrefixProjects = [
+  { name: 'acme-web', aliases: ['acme-web', 'acme'], root: '/fake/acme-web' },
+  { name: 'acme-api', aliases: ['acme-api', 'acme'], root: '/fake/acme-api' },
+  { name: 'acme-cli', aliases: ['acme-cli', 'acme'], root: '/fake/acme-cli' },
+];
+
+describe('match() — ambiguous aliases', () => {
+  test('an alias claimed by 2+ projects does not block', () => {
+    const result = match('the acme deploy is broken', pin, sharedPrefixProjects);
+    assert.strictEqual(result.decision, 'allow');
+    assert.strictEqual(result.reason, 'none');
+    assert.deepStrictEqual(result.matchedTokens, []);
+  });
+
+  test('an unambiguous alias on the same project still blocks', () => {
+    const result = match('acme-api is broken', pin, sharedPrefixProjects);
+    assert.strictEqual(result.decision, 'block');
+    assert.strictEqual(result.reason, 'alias');
+    assert.deepStrictEqual(result.matchedTokens, ['acme-api']);
+  });
+});
+
+describe('match() — sibling worktrees', () => {
+  // An Orca workspace pins to .../workspaces/<repo>/<BRANCH>, while the repo's
+  // other worktrees live elsewhere. They are one repository, so paths into a
+  // sibling worktree are in-lane.
+  const worktreePin = {
+    root: '/fake/workspaces/project-a/FEATURE',
+    name: 'feature',
+    aliases: ['feature', 'project-a', 'proja'],
+    siblingRoots: ['/fake/project-a', '/fake/project-a-main'],
+  };
+
+  test('path inside a sibling worktree is allowed', () => {
+    const result = match('fix /fake/project-a-main/src/index.js', worktreePin, knownProjects);
+    assert.strictEqual(result.decision, 'allow');
+    assert.strictEqual(result.reason, 'none');
+    assert.deepStrictEqual(result.matchedPaths, []);
+  });
+
+  test('path outside every sibling worktree still blocks', () => {
+    const result = match('fix /fake/unrelated-dir/index.js', worktreePin, knownProjects);
+    assert.strictEqual(result.decision, 'block');
+    assert.strictEqual(result.reason, 'path');
+  });
+
+  test('own repo name folded into pin aliases does not block', () => {
+    const result = match('project-a needs a rebuild', worktreePin, knownProjects);
+    assert.strictEqual(result.decision, 'allow');
+    assert.strictEqual(result.reason, 'none');
+  });
+
+  test('missing siblingRoots (pre-upgrade lockfile) behaves as before', () => {
+    const legacyPin = { root: '/fake/project-a', name: 'project-a', aliases: ['project-a'] };
+    const result = match('fix /fake/unrelated-dir/index.js', legacyPin, knownProjects);
+    assert.strictEqual(result.decision, 'block');
+    assert.strictEqual(result.reason, 'path');
+  });
+});

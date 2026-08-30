@@ -55,7 +55,11 @@ async function main() {
   const config = loadConfig(resolution.root);
 
   // Determine the pin's canonical name + aliases.
-  const { name, aliases } = inferPinNameFromRoot(resolution.root, config);
+  const { name, aliases } = inferPinNameFromRoot(
+    resolution.root,
+    config,
+    resolution.siblingRoots
+  );
 
   const lockfile = {
     schemaVersion: 1,
@@ -63,6 +67,7 @@ async function main() {
     pinRoot: resolution.root,
     pinName: name,
     pinAliases: aliases,
+    pinSiblingRoots: resolution.siblingRoots || [],
     trustedSiblings: config.trustedSiblings || [],
     knownProjects: config.knownProjects || [],
     context: {

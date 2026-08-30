@@ -88,7 +88,11 @@ async function main() {
   if (!pin) {
     const resolution = resolveProjectRoot(cwd);
     const config = loadConfig(resolution.root);
-    const { name, aliases } = inferPinNameFromRoot(resolution.root, config);
+    const { name, aliases } = inferPinNameFromRoot(
+      resolution.root,
+      config,
+      resolution.siblingRoots
+    );
 
     pin = {
       schemaVersion: 1,
@@ -96,6 +100,7 @@ async function main() {
       pinRoot: resolution.root,
       pinName: name,
       pinAliases: aliases,
+      pinSiblingRoots: resolution.siblingRoots || [],
       trustedSiblings: config.trustedSiblings || [],
       knownProjects: config.knownProjects || [],
       context: {
@@ -127,6 +132,8 @@ async function main() {
     root: pin.pinRoot,
     name: pin.pinName,
     aliases: pin.pinAliases,
+    // Absent on lockfiles written before sibling-worktree awareness landed.
+    siblingRoots: pin.pinSiblingRoots || [],
     trustedSiblings: pin.trustedSiblings,
   };
 

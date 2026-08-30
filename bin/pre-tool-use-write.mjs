@@ -43,18 +43,25 @@ async function main() {
 
   // Find the pin. If missing, do a best-effort resolve so write-tier still protects.
   let pinRoot = null;
+  let siblingRoots = [];
   const pin = readPin(sessionId);
   if (pin) {
     pinRoot = pin.pinRoot;
+    siblingRoots = pin.pinSiblingRoots || [];
   } else {
     try {
-      pinRoot = resolveProjectRoot(cwd).root;
+      const resolution = resolveProjectRoot(cwd);
+      pinRoot = resolution.root;
+      siblingRoots = resolution.siblingRoots || [];
     } catch {
       return allowSilently();
     }
   }
 
   if (!pinRoot) return allowSilently();
+
+  // Sibling worktrees are the same repository — writing there is in-lane.
+  const inLaneRoots = [pinRoot, ...siblingRoots];
 
   // File-path-based writes (Edit/Write/MultiEdit/NotebookEdit).
   if (WRITE_TOOLS.has(toolName)) {
@@ -64,7 +71,7 @@ async function main() {
 
     let inside = false;
     try {
-      inside = isInside(targetPath, pinRoot);
+      inside = inLaneRoots.some((root) => isInside(targetPath, root));
     } catch {
       return allowSilently();
     }
@@ -95,7 +102,7 @@ async function main() {
     // If the bash cwd itself is outside the pin, any write is suspect.
     let bashInside = true;
     try {
-      bashInside = isInside(bashCwd, pinRoot);
+      bashInside = inLaneRoots.some((root) => isInside(bashCwd, root));
     } catch {
       bashInside = true; // Fail open on bad path.
     }
